@@ -1,0 +1,128 @@
+import React, { useState, createContext, useContext } from 'react';
+import { View, Text, Button, FlatList, TextInput, Switch, StyleSheet } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+const WorkoutContext = createContext();
+const Tab = createBottomTabNavigator();
+
+function HomeScreen() {
+  const { workouts } = useContext(WorkoutContext);
+  const totalTime = workouts.reduce((sum, w) => sum + parseInt(w.duration), 0);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>მთავარი</Text>
+      <Text>შესრულებული ვარჯიშები: {workouts.length}</Text>
+      <Text>ჯამური დრო: {totalTime} წუთი</Text>
+    </View>
+  );
+}
+
+function LogWorkoutScreen() {
+  const { addWorkout } = useContext(WorkoutContext);
+  const [name, setName] = useState('');
+  const [duration, setDuration] = useState('');
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>ვარჯიშის დამატება</Text>
+      <TextInput
+        placeholder="ვარჯიშის სახელი"
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+      />
+      <TextInput
+        placeholder="დრო (წუთებში)"
+        style={styles.input}
+        keyboardType="რიცხვითი"
+        value={duration}
+        onChangeText={setDuration}
+      />
+      <Button title="დამატება" onPress={() => {
+        if (name && duration) {
+          addWorkout({ name, duration });
+          setName('');
+          setDuration('');
+        }
+      }} />
+    </View>
+  );
+}
+
+function ActivitiesScreen() {
+  const { workouts } = useContext(WorkoutContext);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>აქტივობები</Text>
+      <FlatList
+        data={workouts}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <Text>{item.name}</Text>
+            <Text>{item.duration} წუთი</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+function SettingsScreen() {
+  const { darkMode, setDarkMode } = useContext(WorkoutContext);
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>პარამეტრები</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text>მუქი რეჟიმი</Text>
+        <Switch value={darkMode} onValueChange={setDarkMode} />
+      </View>
+    </View>
+  );
+}
+
+export default function App() {
+  const [workouts, setWorkouts] = useState([]);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const addWorkout = workout => setWorkouts(prev => [...prev, workout]);
+
+  return (
+    <WorkoutContext.Provider value={{ workouts, addWorkout, darkMode, setDarkMode }}>
+      <NavigationContainer theme={darkMode ? DarkTheme : DefaultTheme}>
+        <Tab.Navigator>
+          <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'მთავარი' }} />
+          <Tab.Screen name="LogWorkout" component={LogWorkoutScreen} options={{ title: 'დამატება' }} />
+          <Tab.Screen name="Activities" component={ActivitiesScreen} options={{ title: 'აქტივობები' }} />
+          <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'პარამეტრები' }} />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </WorkoutContext.Provider>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'flex-start'
+  },
+  header: {
+    fontSize: 24,
+    marginBottom: 20
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    marginBottom: 10
+  },
+  item: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc'
+  }
+});
